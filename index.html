@@ -467,9 +467,12 @@
             <div class="center-content">
                 <h1>Game Finished! 🎉</h1>
                 <p>You completed 25 questions.</p>
-                <div id="final-score">0</div>
-                <p>Total Correct Answers</p>
-                <button class="btn" id="restart-btn">Menu</button>
+                <div id="final-score" style="margin: 10px 0;">0</div>
+                <p style="margin-bottom: 15px;">Total Correct Answers</p>
+                <h2 id="final-message" style="margin: 10px 0 15px 0; color: var(--primary);"></h2>
+                <img id="final-image" src="" alt="Score Image"
+                    style="max-width: 100%; max-height: 250px; border-radius: 15px; display: none; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                <button class="btn" id="restart-btn" style="margin-top: 5px;">Menu</button>
             </div>
         </div>
     </div>
@@ -670,6 +673,25 @@
             if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
 
             ui.finalScore.textContent = state.score;
+
+            const finalMessageEl = document.getElementById('final-message');
+            const finalImageEl = document.getElementById('final-image');
+
+            if (state.score >= 25) {
+                finalMessageEl.textContent = "You're GOATed";
+                finalImageEl.src = "assets/goat.jpg";
+            } else if (state.score === 24) {
+                finalMessageEl.textContent = "Your score - Robercik!!!";
+                finalImageEl.src = "assets/robercik.jpg";
+            } else if (state.score === 23) {
+                finalMessageEl.textContent = "Tylko Florcik i Florcik";
+                finalImageEl.src = "assets/florcik.jpg";
+            } else {
+                finalMessageEl.textContent = "Bruhhh. Seriously? - Onana";
+                finalImageEl.src = "assets/onana.jpeg";
+            }
+            finalImageEl.style.display = "block";
+
             showScreen('gameover');
         }
 
