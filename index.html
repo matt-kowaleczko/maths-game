@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maths Chase Game</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --track-bg: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+            height: 100vh;
+            max-height: 900px;
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (min-width: 600px) {
+            #app {
+                height: 95vh;
+                border-radius: 20px;
+            }
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Menu / Game Over Screen */
+        .center-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+            text-align: left;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .setting-group select,
+        .setting-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .setting-group select:focus,
+        .setting-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-small {
+            background: #cbd5e1;
+            color: var(--text-main);
+            border: none;
+            padding: 8px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-small:active {
+            transform: scale(0.95);
+        }
+
+        /* Game Screen */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-board {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #f1f5f9;
+            padding: 10px 20px;
+            border-radius: 15px;
+            color: var(--primary);
+        }
+
+        .timer-display {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        /* Chase Scene */
+        .chase-container {
+            width: 100%;
+            height: 80px;
+            background: var(--track-bg);
+            border-radius: 40px;
+            position: relative;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 3px solid #cbd5e1;
+        }
+
+        .chase-entity {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 40px;
+            transition: left 0.1s linear;
+            z-index: 2;
+        }
+
+        #monster {
+            left: 5px;
+        }
+
+        #man {
+            right: 5px;
+            transition: none;
+            transform: translateY(-50%) scaleX(-1);
+            /* Fixed at the end until caught */
+        }
+
+        #track-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444 0%, #feca1d 100%);
+            width: 0%;
+            transition: width 0.1s linear;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        /* Question Area */
+        .question-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .input-display {
+            min-width: 80px;
+            height: 70px;
+            background: #f1f5f9;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 0 15px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            height: 50px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .toast {
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .toast.success {
+            background-color: var(--success);
+        }
+
+        .toast.danger {
+            background-color: var(--danger);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Keypad */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-bottom: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .key {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            height: 75px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.1s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .key:active {
+            transform: translateY(4px);
+            box-shadow: none;
+            background: #e2e8f0;
+        }
+
+        .key-action {
+            background: #e2e8f0;
+            color: var(--text-muted);
+        }
+
+        .key-enter {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .key-enter:active {
+            background: var(--primary-hover);
+        }
+
+        #final-score {
+            font-size: 5rem;
+            color: var(--primary);
+            margin: 20px 0;
+            font-weight: 800;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-10px);
+            }
+
+            40% {
+                transform: translateX(10px);
+            }
+
+            60% {
+                transform: translateX(-10px);
+            }
+
+            80% {
+                transform: translateX(10px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- MENU SCREEN -->
+        <div id="menu-screen" class="screen active">
+            <div class="center-content">
+                <h1>Maths Chase 🏃‍♂️👹</h1>
+
+                <div class="setting-group">
+                    <label for="max-table">Times Tables up to:</label>
+                    <select id="max-table">
+                        <option value="5">5x5</option>
+                        <option value="10">10x10</option>
+                        <option value="12" selected>12x12</option>
+                        <option value="15">15x15</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label for="time-limit">Time to answer (seconds):</label>
+                    <input type="number" id="time-limit" value="6" min="3" max="30">
+                </div>
+
+                <button class="btn" id="start-btn">PLAY</button>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="game-screen" class="screen">
+            <div class="header">
+                <button class="btn-small" id="game-restart-btn">Menu</button>
+                <div class="score-board">Q: <span id="question-count">1</span>/25 | Score: <span id="score">0</span>
+                </div>
+                <div class="timer-display"><span id="time-left">6.0</span>s</div>
+            </div>
+
+            <div class="chase-container" id="track">
+                <div id="track-progress"></div>
+                <div class="chase-entity" id="monster">👹</div>
+                <div class="chase-entity" id="man">🏃‍♂️</div>
+            </div>
+
+            <div class="question-area">
+                <div class="toast-container">
+                    <div id="toast" class="toast"></div>
+                </div>
+
+                <div class="question">
+                    <span id="question-text">5 × 4</span>
+                    <span>=</span>
+                    <div class="input-display" id="user-input"></div>
+                </div>
+            </div>
+
+            <div class="keypad" id="keypad">
+                <div class="key" data-val="1">1</div>
+                <div class="key" data-val="2">2</div>
+                <div class="key" data-val="3">3</div>
+                <div class="key" data-val="4">4</div>
+                <div class="key" data-val="5">5</div>
+                <div class="key" data-val="6">6</div>
+                <div class="key" data-val="7">7</div>
+                <div class="key" data-val="8">8</div>
+                <div class="key" data-val="9">9</div>
+                <div class="key key-action" data-val="clear">C</div>
+                <div class="key" data-val="0">0</div>
+                <div class="key key-enter" data-val="enter">↵</div>
+            </div>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="game-over-screen" class="screen">
+            <div class="center-content">
+                <h1>Game Finished! 🎉</h1>
+                <p>You completed 25 questions.</p>
+                <div id="final-score">0</div>
+                <p>Total Correct Answers</p>
+                <button class="btn" id="restart-btn">Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            score: 0,
+            settings: {
+                maxTable: 12,
+                timeLimitMs: 6000
+            },
+            questionStartTime: 0,
+            currentQuestion: { a: 0, b: 0, answer: 0 },
+            currentInput: "",
+            animationFrameId: null,
+            isPlaying: false,
+            isCooldown: false,
+            questionCount: 1
+        };
+
+        // DOM Elements
+        const screens = {
+            menu: document.getElementById('menu-screen'),
+            game: document.getElementById('game-screen'),
+            gameover: document.getElementById('game-over-screen')
+        };
+
+        const ui = {
+            score: document.getElementById('score'),
+            questionCount: document.getElementById('question-count'),
+            timeLeft: document.getElementById('time-left'),
+            questionText: document.getElementById('question-text'),
+            userInput: document.getElementById('user-input'),
+            monster: document.getElementById('monster'),
+            man: document.getElementById('man'),
+            track: document.getElementById('track'),
+            trackProgress: document.getElementById('track-progress'),
+            toast: document.getElementById('toast'),
+            finalScore: document.getElementById('final-score'),
+
+            // Inputs
+            maxTable: document.getElementById('max-table'),
+            timeLimit: document.getElementById('time-limit'),
+        };
+
+        // Setup Event Listeners
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', showMenu);
+        document.getElementById('game-restart-btn').addEventListener('click', showMenu);
+
+        // Keypad Logic
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', (e) => {
+                handleInput(e.target.dataset.val);
+                // Vibrate on touch devices if supported
+                if (navigator.vibrate) navigator.vibrate(10);
+            });
+        });
+
+        // Keyboard Logic
+        document.addEventListener('keydown', (e) => {
+            if (!state.isPlaying) return;
+
+            if (e.key >= '0' && e.key <= '9') {
+                handleInput(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                handleInput('clear');
+            } else if (e.key === 'Enter') {
+                handleInput('enter');
+            }
+        });
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function showMenu() {
+            showScreen('menu');
+        }
+
+        function startGame() {
+            // Read Settings
+            state.settings.maxTable = parseInt(ui.maxTable.value) || 12;
+            state.settings.timeLimitMs = (parseFloat(ui.timeLimit.value) || 6) * 1000;
+
+            // Reset State
+            state.score = 0;
+            state.questionCount = 1;
+            state.isPlaying = true;
+            state.isCooldown = false;
+            updateScoreDisplay();
+
+            showScreen('game');
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            // Generate random numbers between 1 and maxTable
+            state.currentQuestion.a = Math.floor(Math.random() * state.settings.maxTable) + 1;
+            state.currentQuestion.b = Math.floor(Math.random() * state.settings.maxTable) + 1;
+            state.currentQuestion.answer = state.currentQuestion.a * state.currentQuestion.b;
+
+            ui.questionText.textContent = `${state.currentQuestion.a} × ${state.currentQuestion.b}`;
+
+            clearInput();
+            hideToast();
+
+            state.questionStartTime = Date.now();
+
+            // Start animation loop
+            if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+            gameLoop();
+        }
+
+        function handleInput(val) {
+            if (!state.isPlaying || state.isCooldown) return;
+
+            if (val === 'clear') {
+                clearInput();
+            } else if (val === 'enter') {
+                checkAnswer();
+            } else if (state.currentInput.length < 4) {
+                state.currentInput += val;
+                updateInputDisplay();
+            }
+        }
+
+        function clearInput() {
+            state.currentInput = "";
+            updateInputDisplay();
+        }
+
+        function updateInputDisplay() {
+            ui.userInput.textContent = state.currentInput;
+        }
+
+        function updateScoreDisplay() {
+            ui.score.textContent = state.score;
+            ui.questionCount.textContent = state.questionCount;
+        }
+
+        function checkAnswer() {
+            if (state.currentInput === "") return;
+
+            const answer = parseInt(state.currentInput);
+
+            if (answer === state.currentQuestion.answer) {
+                // Correct!
+                state.score++;
+                showToast("Very good my little teddy bear", "success");
+            } else {
+                // Incorrect
+                state.score--;
+                showToast("Jestes Pimpuch", "danger");
+
+                // Shake effect on input
+                ui.userInput.classList.remove('shake');
+                void ui.userInput.offsetWidth; // trigger reflow
+                ui.userInput.classList.add('shake');
+            }
+
+            updateScoreDisplay();
+            startCooldown();
+        }
+
+        function startCooldown() {
+            state.isCooldown = true;
+            if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+
+            setTimeout(() => {
+                state.isCooldown = false;
+                // Only generate next question if we haven't restarted or quit
+                if (state.isPlaying) {
+                    state.questionCount++;
+                    if (state.questionCount > 25) {
+                        gameOver();
+                    } else {
+                        updateScoreDisplay();
+                        generateQuestion();
+                    }
+                }
+            }, 2000);
+        }
+
+        function showToast(message, type) {
+            ui.toast.textContent = message;
+            ui.toast.className = `toast ${type} show`;
+        }
+
+        function hideToast() {
+            ui.toast.classList.remove('show');
+        }
+
+        function gameOver() {
+            state.isPlaying = false;
+            if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+
+            ui.finalScore.textContent = state.score;
+            showScreen('gameover');
+        }
+
+        function gameLoop() {
+            if (!state.isPlaying) return;
+
+            const now = Date.now();
+            const elapsed = now - state.questionStartTime;
+            const remaining = Math.max(0, state.settings.timeLimitMs - elapsed);
+
+            // Update timer text
+            ui.timeLeft.textContent = (remaining / 1000).toFixed(1);
+
+            // Calculate monster progress
+            const progressPhase = Math.min(1, elapsed / state.settings.timeLimitMs);
+
+            // Animate Monster
+            const trackWidth = ui.track.clientWidth;
+            const manWidth = ui.man.clientWidth;
+            const monsterWidth = ui.monster.clientWidth;
+
+            // Usable track is from padding left to padding right
+            const startX = 5;
+            const endX = trackWidth - manWidth - 5;
+            const travelDistance = endX - startX;
+
+            const currentX = startX + (travelDistance * progressPhase);
+            ui.monster.style.left = `${currentX}px`;
+            ui.trackProgress.style.width = `${progressPhase * 100}%`;
+
+            if (elapsed >= state.settings.timeLimitMs) {
+                // Timeout! Counts as incorrect
+                state.score--;
+                showToast("Jestes Pimpuch", "danger");
+                updateScoreDisplay();
+                startCooldown();
+            } else {
+                state.animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Auto-focus logic to prevent zoom/keyboard issues on mobile is handled by 'readonly' or avoiding actual inputs
+        // We used a custom div for input, so native keyboard won't pop up!
+
+    </script>
+</body>
+
+</html>
