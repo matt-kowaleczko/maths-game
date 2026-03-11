@@ -1,0 +1,20 @@
+# Configuration for Maths Chase Game
+
+messages:
+  correct: "Good answer! Well done!"
+  incorrect_wrong: "Wrong answer"
+  incorrect_timeout: "Time's up!"
+
+final_scores:
+  - min_score: 25
+    message: "You're GOATed"
+    image: "assets/goat.jpg"
+  - min_score: 24
+    message: "Great score - Well done!!!"
+    image: "assets/robercik.jpg"
+  - min_score: 23
+    message: "Not too bad"
+    image: "assets/florcik.jpg"
+  - min_score: -999  # Catch-all for anything below 23
+    message: "You can do better"
+    image: "assets/onana.jpeg"
